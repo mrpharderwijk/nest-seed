@@ -1,0 +1,25 @@
+import { Module } from '@nestjs/common';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
+import { usersProviders } from './users.providers';
+import { DatabaseModule } from 'src/shared/database/database.module';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from 'nestjs-config';
+
+@Module({
+  imports: [
+    ConfigModule,
+    DatabaseModule,
+    PassportModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        defaultStrategy: configService.get('jwt').defaultStrategy,
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  controllers: [UsersController],
+  providers: [UsersService, ...usersProviders],
+  exports: [UsersService],
+})
+export class UsersModule {}
