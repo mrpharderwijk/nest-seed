@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import * as path from 'path';
 import { ConfigModule, ConfigService } from 'nestjs-config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -13,6 +12,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth/auth.controller';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { AuthService } from './auth/auth.service';
+import { TokenService } from './tokens/token.service';
+import { TokensController } from './tokens/tokens.controller';
+import * as path from 'path';
+import { tokensProviders } from './tokens/tokens.providers';
 
 @Module({
   imports: [
@@ -38,7 +41,12 @@ import { AuthService } from './auth/auth.service';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AppController, AuthController, UsersController],
+  controllers: [
+    AppController,
+    AuthController,
+    UsersController,
+    TokensController,
+  ],
   providers: [
     AuthService,
     AppService,
@@ -46,7 +54,16 @@ import { AuthService } from './auth/auth.service';
     JwtStrategy,
     UserService,
     ...usersProviders,
+    TokenService,
+    ...tokensProviders,
   ],
-  exports: [AuthService, ...databaseProviders, UserService, ...usersProviders],
+  exports: [
+    AuthService,
+    ...databaseProviders,
+    UserService,
+    ...usersProviders,
+    TokenService,
+    ...tokensProviders,
+  ],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { User } from '../shared/models/user/user.model';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -17,7 +17,12 @@ export class UserService {
    * @param emailAddress
    */
   async userExists(emailAddress: string): Promise<boolean> {
-    const userExists = await this.findOne(emailAddress);
+    if (!emailAddress) {
+      throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
+    }
+    emailAddress = emailAddress.toLowerCase();
+
+    const userExists = await this.findOneByEmailAddress(emailAddress);
 
     return !!userExists;
   }
@@ -27,18 +32,53 @@ export class UserService {
    * @param createUserDto
    */
   async create(createUserDto: CreateUserDto): Promise<User> {
+    if (!createUserDto) {
+      throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
+    }
     createUserDto.password = await this.encryptPassword(createUserDto.password);
 
+    /**
+     * Check if user already exists
+     */
+    const userExists = await this.userExists(createUserDto.emailAddress);
+    if (userExists) {
+      throw new HttpException('USER_EXISTS_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
     const createUser = new this.userModel(createUserDto);
-    return await createUser.save();
+    const userCreated = await createUser.save();
+
+    if (!userCreated) {
+      throw new HttpException('USER_CREATE_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
+    return userCreated;
   }
 
   /**
    * Find a user by emailAddress
    * @param emailAddress
    */
-  async findOne(emailAddress: string): Promise<User> {
+  async findOneByEmailAddress(emailAddress: string): Promise<User> {
+    if (!emailAddress) {
+      throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
+    emailAddress = emailAddress.toLowerCase();
+
     return await this.userModel.findOne({ emailAddress }).exec();
+  }
+
+  /**
+   * Find a user by userId
+   * @param userId
+   */
+  async findOne(userId: string): Promise<User> {
+    if (!userId) {
+      throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.userModel.findOne({ _id: userId }).exec();
   }
 
   /**
@@ -52,16 +92,20 @@ export class UserService {
    * Update a user by userId
    * @param user
    */
-  async updateOne(user: User): Promise<User> {
+  async updateOne(user: User, updatedModel: any): Promise<User> {
+    if (!updatedModel) {
+      throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
+    const newModel = { ...user, ...updatedModel };
+
     return await this.userModel
       .updateOne(
         {
           _id: user._id,
         },
         {
-          $set: {
-            ...user,
-          },
+          $set: newModel,
         },
       )
       .exec();
@@ -73,6 +117,10 @@ export class UserService {
    * TODO: return value
    */
   async encryptPassword(password: string): Promise<any> {
+    if (!password) {
+      throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
     return await bcrypt
       .hash(password, SALT_WORK_FACTOR)
       .then((hashErr, hash) => {

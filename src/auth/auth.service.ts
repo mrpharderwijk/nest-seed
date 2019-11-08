@@ -7,6 +7,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthJwtPayload } from '../shared/models/auth/auth-jwt-payload.model';
 import { AuthTokenReply } from '../shared/models/auth/auth-token-reply.model';
 import { User } from '../shared/models/user/user.model';
+import { TokenService } from '../tokens/token.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +15,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private tokenService: TokenService,
   ) {}
 
   /**
@@ -28,32 +30,31 @@ export class AuthService {
     }
 
     return {
-      _id: user._id,
       name: {
         firstName: user.name.firstName,
         middleName: user.name.middleName || null,
         lastName: user.name.lastName,
       },
       emailAddress: user.emailAddress,
+      isValidated: user.isValidated,
     };
   }
 
   /**
-   * Signs the user in by taking the payload and using it to find the user
+   * Log in the user by taking the payload and using it to find the user
    * by email address and then comparing the payload password by the user password.
    * When all is fine a token will be created and the normal token reply will be returned.
    * @param payload
    */
-  async signIn(payload: AuthJwtPayload): Promise<AuthTokenReply> {
+  async logIn(payload: AuthJwtPayload): Promise<any> {
     // Find a user by email address
-    const user = await this.userService.findOne(payload.emailAddress);
+    const user = await this.userService.findOneByEmailAddress(
+      payload.emailAddress.toLowerCase(),
+    );
 
     // Handle off when no user is found
     if (!user) {
-      throw new HttpException(
-        'Wrong username or password',
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException('AUTH_CREDENTIALS_ERROR', HttpStatus.FORBIDDEN);
     }
 
     // Compare the given password to the users password
@@ -61,33 +62,31 @@ export class AuthService {
 
     // Handle off when passwords don't match
     if (!bcryptResult) {
-      throw new HttpException(
-        'Wrong username or password',
-        HttpStatus.FORBIDDEN,
-      );
+      throw new HttpException('AUTH_CREDENTIALS_ERROR', HttpStatus.FORBIDDEN);
     }
 
     // Return the token and expirery
-    return await this.createToken(user);
+    return await this.createAccessToken(user);
   }
 
   /**
-   * Signs the user up
+   * Register the user up
    * @param createUserDto
    */
-  async signUp(createUserDto: CreateUserDto): Promise<AuthTokenReply> {
+  async register(createUserDto: CreateUserDto): Promise<any> {
     const user = await this.userService.create(createUserDto);
 
     // Handle off when the user couldn't be created
     if (!user) {
-      throw new HttpException(
-        'Something went wrong creating the user',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('USER_CREATION_ERROR', HttpStatus.BAD_REQUEST);
     }
 
-    // Create and return new token
-    return await this.createToken(user);
+    const sendToken = this.tokenService.sendToken(user.id);
+    if (!sendToken) {
+      throw new HttpException('USER_CREATION_ERROR', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.createAccessToken(user);
   }
 
   /**
@@ -103,14 +102,14 @@ export class AuthService {
    * and return the complete user when found
    * @param payload
    */
-  async validateUser(userId: string): Promise<User> {
+  async validateUser(emailAddress: string): Promise<User> {
     // Find a user by email address
-    const user = await this.userService.findOne(userId);
+    const user = await this.userService.findOneByEmailAddress(emailAddress);
 
     // Handle off when no user is found
     if (!user) {
       throw new HttpException(
-        'Wrong username or password',
+        'AUTH_CREDENTIALS_ERROR',
         HttpStatus.UNAUTHORIZED,
       );
     }
@@ -123,7 +122,7 @@ export class AuthService {
    * Creates a JWT token and returns the token and the expirery to the user
    * @param user
    */
-  async createToken(user: User): Promise<AuthTokenReply> {
+  async createAccessToken(user: User): Promise<AuthTokenReply> {
     // Create a sign payload which is used to create the token with
     const signPayload = { id: user._id, emailAddress: user.emailAddress };
 
@@ -133,7 +132,7 @@ export class AuthService {
     // Handle off when token creation fails
     if (!token) {
       throw new HttpException(
-        'Wrong username or password',
+        'AUTH_CREDENTIALS_ERROR',
         HttpStatus.UNAUTHORIZED,
       );
     }

@@ -8,13 +8,11 @@ export const databaseProviders = [
     useFactory: async (
       configService: ConfigService,
     ): Promise<typeof mongoose> => {
-      return await mongoose.connect(
-        configService.get('database').host,
-        {
-          useNewUrlParser: true,
-          useCreateIndex: true,
-        },
-      );
+      return await mongoose.connect(configService.get('database').host, {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useUnifiedTopology: true,
+      });
     },
   },
 ];

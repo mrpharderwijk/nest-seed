@@ -12,6 +12,11 @@ export const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isValidated: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
     name: {
       firstName: {
         type: String,

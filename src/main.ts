@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from 'nestjs-config';
 import { LoggingInterceptor } from './shared/services/interceptors/logging.interceptor';
 import { TransformInterceptor } from './shared/services/interceptors/transform.interceptor';
-import { ErrorsInterceptor } from './shared/services/interceptors/errors.interceptor';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -12,6 +12,12 @@ async function bootstrap() {
   const configService: ConfigService = app.get(ConfigService);
 
   app.setGlobalPrefix(`v${configService.get('api').version}`);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      disableErrorMessages: false,
+      whitelist: true,
+    }),
+  );
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
     new TransformInterceptor(),

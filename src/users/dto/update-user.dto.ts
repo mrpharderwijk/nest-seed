@@ -1,7 +1,7 @@
 import { Name } from '../../shared/models/name.model';
-import { IsEmail, IsString, IsBoolean } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsBoolean } from 'class-validator';
 
-export class CreateUserDto {
+export class UpdateUserDto {
   @IsString()
   readonly name: Name;
 
@@ -10,9 +10,6 @@ export class CreateUserDto {
 
   @IsString()
   password: string;
-
-  @IsString()
-  passwordConfirm: string;
 
   @IsBoolean()
   isValidated: boolean;

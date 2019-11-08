@@ -1,15 +1,22 @@
-import { Injectable, NestInterceptor, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import * as log from 'fancy-log';
 import * as util from 'util'; // has no default export
+import { Response } from './transform.interceptor';
 
+// TODO: <Response<any>> -> <Response<T>>
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
-    call$: Observable<any>,
-  ): Observable<any> {
+    next: CallHandler,
+  ): Observable<Response<any>> {
     const response = context.switchToHttp().getResponse();
     const request = context.switchToHttp().getRequest();
     const now = Date.now();
@@ -22,7 +29,7 @@ export class LoggingInterceptor implements NestInterceptor {
       '\n',
       `headers: ${util.inspect(request.headers)}`,
     );
-    return call$.pipe(
+    return next.handle().pipe(
       tap(data => {
         log(
           `${new Date()} - ${Date.now() - now}ms - RESPONSE: ${
