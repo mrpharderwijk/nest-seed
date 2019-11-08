@@ -10,5 +10,6 @@ export default {
   },
   mailer: {
     from: process.env.MAIL_FROM_EMAIL_ADDRESS,
+    defaultTo: process.env.MAIL_TO_EMAIL_ADDRESS,
   },
 };

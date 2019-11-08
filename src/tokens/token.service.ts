@@ -133,16 +133,16 @@ export class TokenService {
      */
     const mailOptions = {
       from: config.mailer.from,
-      to: 'mrpharderwijk@gmail.com',
+      to: config.mailer.defaultTo,
       subject: 'Sending Email using Node.js',
       html:
         '<html>' +
         '<head>' +
         '</head>' +
         '<body>' +
-        `That was easy! <a href="https://bla.herokuapp.com/confirmation/${
-          tokenRecord.token
-        }">verify email</a>.<br>` +
+        `That was easy! <a href="${
+          this.configService.get('token').tokenConfirmUrl
+        }/${tokenRecord.token}">verify email</a>.<br>` +
         `Confirmation token: ${tokenRecord.token}<br>` +
         `UserId: ${tokenRecord.userId}` +
         '<body>' +
