@@ -7,7 +7,6 @@ import {
 
 @Injectable()
 export class JoiValidationPipe implements PipeTransform {
-  // TODO: any was Object but cant find validate see https://docs.nestjs.com/pipes
   constructor(private readonly schema: any) {}
 
   transform(value: any, metadata: ArgumentMetadata) {

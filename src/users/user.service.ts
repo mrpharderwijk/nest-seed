@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { User } from '../shared/models/user/user.model';
 import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
 
 const SALT_WORK_FACTOR = 10;
 
@@ -31,20 +32,22 @@ export class UserService {
    * Encrypts the password of the user and tries to save the new user
    * @param createUserDto
    */
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    if (!createUserDto) {
+  async create(registerUserDto: RegisterUserDto): Promise<User> {
+    if (!registerUserDto) {
       throw new HttpException('USER_PAYLOAD_ERROR', HttpStatus.BAD_REQUEST);
     }
-    createUserDto.password = await this.encryptPassword(createUserDto.password);
+    registerUserDto.password = await this.encryptPassword(
+      registerUserDto.password,
+    );
 
     /**
      * Check if user already exists
      */
-    const userExists = await this.userExists(createUserDto.emailAddress);
+    const userExists = await this.userExists(registerUserDto.emailAddress);
     if (userExists) {
       throw new HttpException('USER_EXISTS_ERROR', HttpStatus.BAD_REQUEST);
     }
-
+    const createUserDto = { isValidated: false, ...registerUserDto };
     const createUser = new this.userModel(createUserDto);
     const userCreated = await createUser.save();
 

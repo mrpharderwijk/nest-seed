@@ -8,6 +8,7 @@ import { AuthJwtPayload } from '../shared/models/auth/auth-jwt-payload.model';
 import { AuthTokenReply } from '../shared/models/auth/auth-token-reply.model';
 import { User } from '../shared/models/user/user.model';
 import { TokenService } from '../tokens/token.service';
+import { RegisterUserDto } from '../users/dto/register-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -73,18 +74,18 @@ export class AuthService {
    * Register the user up
    * @param createUserDto
    */
-  async register(createUserDto: CreateUserDto): Promise<any> {
-    const user = await this.userService.create(createUserDto);
+  async register(registerUserDto: RegisterUserDto): Promise<any> {
+    const user = await this.userService.create(registerUserDto);
 
     // Handle off when the user couldn't be created
     if (!user) {
       throw new HttpException('USER_CREATION_ERROR', HttpStatus.BAD_REQUEST);
     }
 
-    const sendToken = this.tokenService.sendToken(user.id);
-    if (!sendToken) {
-      throw new HttpException('USER_CREATION_ERROR', HttpStatus.BAD_REQUEST);
-    }
+    // const sendToken = this.tokenService.sendToken(user.id);
+    // if (!sendToken) {
+    //   throw new HttpException('USER_CREATION_ERROR', HttpStatus.BAD_REQUEST);
+    // }
 
     return await this.createAccessToken(user);
   }

@@ -11,7 +11,7 @@ import {
 import { AuthService } from './auth.service';
 import { MongoExceptionFilter } from '../shared/filters/mongo-exception.filter';
 import { AuthJwtPayload } from '../shared/models/auth/auth-jwt-payload.model';
-import { CreateUserDto } from '../users/dto/create-user.dto';
+import { RegisterUserDto } from '../users/dto/register-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { JoiValidationPipe } from '../shared/pipes/joi-validation.pipe';
 import { UserSchema } from '../users/schemas/user.schema';
@@ -46,12 +46,11 @@ export class AuthController {
    * Adds a new user
    */
   @Post('register')
-  @UsePipes(new JoiValidationPipe(UserSchema))
   @UseFilters(MongoExceptionFilter)
   async register(
-    @Body() createUserDto: CreateUserDto,
+    @Body() registerUserDto: RegisterUserDto,
   ): Promise<AuthTokenReply> {
-    return await this.authService.register(createUserDto);
+    return await this.authService.register(registerUserDto);
   }
 
   /**
